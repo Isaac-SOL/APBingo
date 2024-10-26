@@ -104,18 +104,14 @@ class BingoContext(CommonContext):
             asyncio.create_task(self.receive_item())
 
         elif cmd == "LocationInfo":
-            if len(args["locations"]) > 1:
-                # initial request on first connect.
-                self.patch_if_recieved_all_data()
-            else:
-                # request after an item is obtained
-                asyncio.create_task(self.obtained_items_queue.put(args["locations"][0]))
+            # request after an item is obtained
+            asyncio.create_task(self.obtained_items_queue.put(args["locations"][0]))
 
     async def receive_item(self):
         async with self.critical_section_lock:
 
             if not self.item_ap_id_to_name:
-                await self.wait_for_initial_connection_info()
+                return
 
             for network_item in self.items_received:
                 if network_item not in self.previous_received:
@@ -125,19 +121,6 @@ class BingoContext(CommonContext):
                     self.acquired_keys.append(item_name)
                     self.bingo_check()
 
-    async def wait_for_initial_connection_info(self):
-        """
-        This method waits until the client finishes the initial conversation with the server.
-        See client_recieved_initial_server_data for wait requirements.
-        """
-        if self.client_recieved_initial_server_data():
-            return
-
-        while not self.client_recieved_initial_server_data() and not self.exit_event.is_set():
-            await asyncio.sleep(1)
-        if not self.exit_event.is_set():
-            # wait an extra second to process data
-            await asyncio.sleep(1)
 
     def bingo_check(self):
 
@@ -168,6 +151,9 @@ class BingoContext(CommonContext):
             achieved_bingos.append("Bingo (E1-A5)")
 
         # If goal no# of bingo's achieved, victory!
+        if len(achieved_bingos) == 12:
+            self.found_checks.append(self.location_name_to_ap_id["Bingo (ALL)"])
+
         if len(achieved_bingos) >= int(self.required_bingo):
             asyncio.create_task(self.end_goal())
 
@@ -182,7 +168,6 @@ class BingoContext(CommonContext):
 
         asyncio.create_task(self.send_checks())
 
-
     async def end_goal(self):
         message = [{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}]
         await self.send_msgs(message)
@@ -196,6 +181,9 @@ class BingoContext(CommonContext):
     def remove_found_checks(self):
         self.prev_found += self.found_checks
         self.missing_checks = [item for item in self.missing_checks if item not in self.found_checks]
+
+    async def get_bingo_info(self):
+        logger.info("You need to get " + str(self.required_bingo) + " bingo's to win!")
 
 
 def launch():
