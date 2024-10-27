@@ -4,6 +4,7 @@ import colorama
 import time
 
 from .Bingo import (
+    run_bingo_board,
     highlight_square,
     update_bingo_board,
 )
@@ -53,6 +54,7 @@ class BingoContext(CommonContext):
         self.acquired_keys = []
         self.obtained_items_queue = asyncio.Queue()
         self.critical_section_lock = asyncio.Lock()
+        self.player = None
 
     async def server_auth(self, password_requested: bool = False):
         if password_requested and not self.password:
@@ -71,7 +73,8 @@ class BingoContext(CommonContext):
             self.required_bingo = self.options["requiredBingoCount"]
             self.board_locations = self.options["boardLocations"]
             asyncio.create_task(self.send_msgs([{"cmd": "GetDataPackage", "games": ["APBingo"]}]))
-
+            run_bingo_board()
+            time.sleep(3)  # Give the board time to gen
             update_bingo_board(self.board_locations)
 
             # if we don't have the seed name from the RoomInfo packet, wait until we do.

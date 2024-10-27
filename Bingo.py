@@ -72,5 +72,3 @@ def run_bingo_board():
     if bingo_thread is None or not bingo_thread.is_alive():  # Check if the thread is not alive
         bingo_thread = threading.Thread(target=create_bingo_board)
         bingo_thread.start()
-
-run_bingo_board()  # Call this function to open the Bingo board

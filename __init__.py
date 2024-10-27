@@ -99,6 +99,8 @@ class BingoWorld(World):
         self.multiworld.completion_condition[self.player] = lambda state: can_goal(state,self.player, self.options.required_bingos)
 
     def find_locations(self):
+
+        self.board_locations = []
         squares = [
             "A1", "A2", "A3", "A4", "A5",
             "B1", "B2", "B3", "B4", "B5",
@@ -110,7 +112,6 @@ class BingoWorld(World):
         for square in squares:
             board_location = self.multiworld.find_item(square, self.player)
             self.board_locations.append(str(board_location))
-
 
 
     def fill_slot_data(self) -> Dict[str, Any]:
