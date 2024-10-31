@@ -5,7 +5,7 @@ from worlds.AutoWorld import World
 from worlds.LauncherComponents import Component, components, Type, launch_subprocess
 from .Items import BingoItem, item_data_table, item_table
 from .Locations import BingoLocation, location_data_table, location_table
-from .Options import BingoOptions
+from .Options import BingoOptions, BingoStartHints
 from .Regions import region_data_table
 from .Rules import get_bingo_rule, special_rule, can_goal
 
@@ -32,16 +32,20 @@ class BingoWorld(World):
     location_name_to_id = location_table
     item_name_to_id = item_table
     board_locations = []
+    board_size = 0
+    required_bingos = 22
 
     def create_item(self, name: str) -> BingoItem:
         return BingoItem(name, item_data_table[name].type, item_data_table[name].code, self.player)
 
     def create_items(self) -> None:
         item_pool: List[BingoItem] = []
-        for name, item in item_data_table.items():
-            if item.code:
-                item_pool.append(self.create_item(name))
 
+        squares = self.get_available_items()
+
+        for name, item in item_data_table.items():
+            if name in squares:
+                item_pool.append(self.create_item(name))
         self.multiworld.itempool += item_pool
 
     def create_regions(self) -> None:
@@ -53,40 +57,22 @@ class BingoWorld(World):
         # Create locations.
         for region_name, region_data in region_data_table.items():
             region = self.get_region(region_name)
-            region.add_locations({
-                location_name: location_data.address for location_name, location_data in location_data_table.items()
-                if location_data.region == region_name}, BingoLocation)
+
+            available_locs = self.get_available_locations(True)
+
+            filtered_locations = {
+                location: data.address
+                for location, data in location_data_table.items()
+                if location in available_locs and data.region == region_name
+            }
+            region.add_locations(filtered_locations, BingoLocation)
             region.add_exits(region_data_table[region_name].connecting_regions)
 
     def set_rules(self) -> None:
-        bingo_names = [
-            "Bingo (A1-A5)-0",
-            "Bingo (A1-A5)-1",
-            "Bingo (B1-B5)-0",
-            "Bingo (B1-B5)-1",
-            "Bingo (C1-C5)-0",
-            "Bingo (C1-C5)-1",
-            "Bingo (D1-D5)-0",
-            "Bingo (D1-D5)-1",
-            "Bingo (E1-E5)-0",
-            "Bingo (E1-E5)-1",
-            "Bingo (A1-E1)-0",
-            "Bingo (A1-E1)-1",
-            "Bingo (A2-E2)-0",
-            "Bingo (A2-E2)-1",
-            "Bingo (A3-E3)-0",
-            "Bingo (A3-E3)-1",
-            "Bingo (A4-E4)-0",
-            "Bingo (A4-E4)-1",
-            "Bingo (A5-E5)-0",
-            "Bingo (A5-E5)-1",
-            "Bingo (A1-E5)-0",
-            "Bingo (A1-E5)-1",
-            "Bingo (E1-A5)-0",
-            "Bingo (E1-A5)-1",
-        ]
 
-        all_keys = [f"{chr(row)}{col}" for row in range(ord('A'), ord('E') + 1) for col in range(1, 6)]
+        bingo_names = self.get_available_locations(False)
+
+        all_keys = [f"{chr(row)}{col}" for row in range(ord('A'), ord('A') + self.board_size) for col in range(1, self.board_size + 1)]
 
         for bingo in bingo_names:
             self.get_location(bingo).access_rule = get_bingo_rule(bingo, self)
@@ -95,31 +81,63 @@ class BingoWorld(World):
         self.get_location("Bingo (ALL)").access_rule = special_rule(self)
         self.get_location("Bingo (ALL)").item_rule = lambda item: item.name not in all_keys
 
+        # Don't allow incorrect values for required bingos
+        self.required_bingos = self.options.required_bingos.value
+        max_possible_bingos = (2 * self.board_size + 2)
+        if self.required_bingos > max_possible_bingos:
+            self.required_bingos = max_possible_bingos
+
         # Completion condition.
-        self.multiworld.completion_condition[self.player] = lambda state: can_goal(state,self.player, self.options.required_bingos)
+        self.multiworld.completion_condition[self.player] = lambda state: can_goal(state, self.player, self.required_bingos, self.board_size)
+
+    def get_available_items(self):
+        return [f"{chr(row)}{col}" for row in range(ord('A'), ord('A') + self.options.board_size.value) for col in range(1, self.options.board_size.value + 1)]
+
+    def get_available_locations(self, include_all):
+
+        # Define the board size
+        self.board_size = self.options.board_size.value  # Change this to any integer for different board sizes
+
+        bingo_names = []
+
+        # Generate horizontal Bingo names (rows)
+        for row in range(ord('A'), ord('A') + self.board_size):
+            bingo_names.append(f"Bingo ({chr(row)}1-{chr(row)}{self.board_size})-0")
+            bingo_names.append(f"Bingo ({chr(row)}1-{chr(row)}{self.board_size})-1")
+
+        # Generate vertical Bingo names (columns)
+        for col in range(1, self.board_size + 1):
+            bingo_names.append(f"Bingo (A{col}-{chr(ord('A') + self.board_size - 1)}{col})-0")
+            bingo_names.append(f"Bingo (A{col}-{chr(ord('A') + self.board_size - 1)}{col})-1")
+
+        # Generate diagonal Bingo names
+        bingo_names.append(f"Bingo (A1-{chr(ord('A') + self.board_size - 1)}{self.board_size})-0")
+        bingo_names.append(f"Bingo (A1-{chr(ord('A') + self.board_size - 1)}{self.board_size})-1")
+        bingo_names.append(f"Bingo ({chr(ord('A') + self.board_size - 1)}1-A{self.board_size})-0")
+        bingo_names.append(f"Bingo ({chr(ord('A') + self.board_size - 1)}1-A{self.board_size})-1")
+
+        if include_all:
+            bingo_names.append("Bingo (ALL)")
+
+        return bingo_names
 
     def find_locations(self):
 
         self.board_locations = []
-        squares = [
-            "A1", "A2", "A3", "A4", "A5",
-            "B1", "B2", "B3", "B4", "B5",
-            "C1", "C2", "C3", "C4", "C5",
-            "D1", "D2", "D3", "D4", "D5",
-            "E1", "E2", "E3", "E4", "E5"
-        ]
+        squares = self.get_available_items()
 
         for square in squares:
             board_location = self.multiworld.find_item(square, self.player)
             self.board_locations.append(str(board_location))
 
-
     def fill_slot_data(self) -> Dict[str, Any]:
 
         self.find_locations()
+        if bool(self.options.auto_hints):
+            self.options.start_hints = BingoStartHints(self.get_available_items())
 
         return {
-            "requiredBingoCount": self.options.required_bingos.value,
+            "requiredBingoCount": self.required_bingos,
             "boardLocations": self.board_locations,
+            "boardSize": self.options.board_size.value,
         }
-

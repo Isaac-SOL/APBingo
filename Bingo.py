@@ -7,9 +7,12 @@ window = None  # This will hold the Tkinter window instance
 bingo_thread = None  # This will hold the Bingo board thread instance
 box_size = 150  # Set box size to be consistent and large
 window_size = 800  # Increase window size to fit the board
+board_size = 0
 
 def create_bingo_board():
     global window
+    global board_size
+
     # If the window already exists, just bring it to the front
     if window is not None:
         window.lift()  # Bring the existing window to the front
@@ -25,37 +28,46 @@ def create_bingo_board():
     frame.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)  # Expand frame to fill the window
 
     # Configure grid weights for dynamic resizing
-    for i in range(5):
+    for i in range(board_size):
         frame.grid_rowconfigure(i, weight=1)  # Allow rows to expand
         frame.grid_columnconfigure(i, weight=1)  # Allow columns to expand
 
-    # Initialize the board with placeholder labels
-    for i in range(5):
-        for j in range(5):
-            square_name = f"{chr(65 + i)}{j + 1}"  # Create names like "A1", "A2", etc.
-            label = tk.Label(frame, text=square_name, width=10, height=5, font=("Helvetica", 8),
-                             borderwidth=4, relief="groove", bg="white", wraplength=box_size - 40,
-                             justify='center')
-            label.grid(row=i, column=j, padx=10, pady=10, sticky='nsew')  # Adjust sticky for resizing
-            board_squares[square_name] = label  # Store each label in the dictionary
+        # Initialize the board with placeholder labels based on board_size
+        for i in range(board_size):
+            for j in range(board_size):
+                square_name = f"{chr(65 + i)}{j + 1}"  # Create names like "A1", "A2", etc.
+                label = tk.Label(frame, text=square_name, width=10, height=5, font=("Helvetica", 8),
+                                 borderwidth=4, relief="groove", bg="white", wraplength=box_size - 40,
+                                 justify='center')
+                label.grid(row=i, column=j, padx=10, pady=10, sticky='nsew')  # Adjust sticky for resizing
+                board_squares[square_name] = label  # Store each label in the dictionary
 
     # Start the Tkinter main loop
     window.protocol("WM_DELETE_WINDOW", on_closing)  # Handle window close event
     window.mainloop()
 
 def on_closing():
-    global window
-    window.destroy()
+    global window, bingo_thread
+
+    # Quit the Tkinter main loop
+    window.quit()  # This will exit the main loop
+    window.destroy()  # Close the Tkinter window
     window = None  # Reset the window variable when closed
+    bingo_thread = None  # Reset the bingo thread variable
 
 def update_bingo_board(new_labels):
-    # Ensure the new_labels list has exactly 25 items
-    if len(new_labels) != 25:
-        raise ValueError("The new_labels list must contain exactly 25 items.")
+    global board_size
+
+    # Ensure the new_labels list has the correct number of items based on board size
+    expected_size = board_size * board_size  # Calculate the expected number of labels
+    if len(new_labels) != expected_size:
+        raise ValueError(f"The new_labels list must contain exactly {expected_size} items.")
 
     # Update each square with the new label
     for i, label_text in enumerate(new_labels):
-        square_name = f"{chr(65 + (i // 5))}{(i % 5) + 1}"  # Convert index to square name
+        row = i // board_size  # Calculate the row based on board size
+        col = i % board_size   # Calculate the column based on board size
+        square_name = f"{chr(65 + row)}{col + 1}"  # Create square name dynamically
         board_squares[square_name].config(text=label_text)  # Update the text of the label
 
 def highlight_square(square_name):
@@ -67,8 +79,11 @@ def highlight_square(square_name):
 
 
 # Function to run the Bingo board in a separate thread
-def run_bingo_board():
+def run_bingo_board(new_board_size):
     global bingo_thread
+    global board_size
+
+    board_size = new_board_size
     if bingo_thread is None or not bingo_thread.is_alive():  # Check if the thread is not alive
         bingo_thread = threading.Thread(target=create_bingo_board)
         bingo_thread.start()

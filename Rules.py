@@ -6,36 +6,40 @@ def get_bingo_rule(location, world) -> Callable[[CollectionState], bool]:
     required_keys = extract_bingo_spaces(location)
     return lambda state: all(state.has(key, world.player) for key in required_keys)
 
+
 def special_rule(world) -> Callable[[CollectionState], bool]:
     all_keys = [f"{chr(row)}{col}" for row in range(ord('A'), ord('E') + 1) for col in range(1, 6)]
     return lambda state: all(state.has(key, world.player) for key in all_keys)
 
-def can_goal(state, player, required_bingos) -> bool:
 
-    # Define all possible Bingo keys (A1 to E5)
-    possible_keys = [
-        "A1", "A2", "A3", "A4", "A5",
-        "B1", "B2", "B3", "B4", "B5",
-        "C1", "C2", "C3", "C4", "C5",
-        "D1", "D2", "D3", "D4", "D5",
-        "E1", "E2", "E3", "E4", "E5"
+def can_goal(state, player, required_bingos, board_size) -> bool:
+
+    # Generate all possible Bingo keys for a 10x10 board (A1 to J10)
+    possible_keys = [f"{chr(row)}{col}" for row in range(ord('A'), ord('A') + board_size) for col in range(1, board_size + 1)]
+
+    possible_bingos = []
+
+    # Generate rows
+    possible_bingos += [
+        [f"{chr(ord('A') + row)}{col}" for col in range(1, board_size + 1)]
+        for row in range(board_size)
     ]
 
-    # List of all possible Bingo keys
-    possible_bingos = [
-        ["A1", "A2", "A3", "A4", "A5"],  # Row A
-        ["B1", "B2", "B3", "B4", "B5"],  # Row B
-        ["C1", "C2", "C3", "C4", "C5"],  # Row C
-        ["D1", "D2", "D3", "D4", "D5"],  # Row D
-        ["E1", "E2", "E3", "E4", "E5"],  # Row E
-        ["A1", "B1", "C1", "D1", "E1"],  # Column 1
-        ["A2", "B2", "C2", "D2", "E2"],  # Column 2
-        ["A3", "B3", "C3", "D3", "E3"],  # Column 3
-        ["A4", "B4", "C4", "D4", "E4"],  # Column 4
-        ["A5", "B5", "C5", "D5", "E5"],  # Column 5
-        ["A1", "B2", "C3", "D4", "E5"],  # Diagonal \
-        ["A5", "B4", "C3", "D2", "E1"]  # Diagonal /
+    # Generate columns
+    possible_bingos += [
+        [f"{chr(ord('A') + row)}{col}" for row in range(board_size)]
+        for col in range(1, board_size + 1)
     ]
+
+    # Generate the main diagonal (\) from top-left to bottom-right
+    possible_bingos.append([
+        f"{chr(ord('A') + i)}{i + 1}" for i in range(board_size)
+    ])
+
+    # Generate the anti-diagonal (/) from top-right to bottom-left
+    possible_bingos.append([
+        f"{chr(ord('A') + i)}{board_size - i}" for i in range(board_size)
+    ])
 
     # Collect keys that the player has
     player_keys = []

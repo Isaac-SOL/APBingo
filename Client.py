@@ -51,6 +51,7 @@ class BingoContext(CommonContext):
         self.seed_name = None
         self.options = None
         self.required_bingo = None
+        self.board_size = None
         self.acquired_keys = []
         self.obtained_items_queue = asyncio.Queue()
         self.critical_section_lock = asyncio.Lock()
@@ -72,8 +73,9 @@ class BingoContext(CommonContext):
             self.options = args["slot_data"]
             self.required_bingo = self.options["requiredBingoCount"]
             self.board_locations = self.options["boardLocations"]
+            self.board_size = self.options["boardSize"]
             asyncio.create_task(self.send_msgs([{"cmd": "GetDataPackage", "games": ["APBingo"]}]))
-            run_bingo_board()
+            run_bingo_board(self.board_size)
             time.sleep(3)  # Give the board time to gen
             update_bingo_board(self.board_locations)
 
@@ -127,9 +129,9 @@ class BingoContext(CommonContext):
 
     def bingo_check(self):
 
-        # Define the 5x5 bingo board as rows and columns
-        rows = ['A', 'B', 'C', 'D', 'E']
-        columns = ['1', '2', '3', '4', '5']
+        # Generate rows and columns dynamically
+        rows = [chr(ord('A') + i) for i in range(self.board_size)]  # 'A', 'B', 'C', etc.
+        columns = [str(i + 1) for i in range(self.board_size)]  # '1', '2', '3', etc.
 
         # Create a set for acquired keys for efficient lookup
         acquired_set = set(self.acquired_keys)
@@ -140,23 +142,24 @@ class BingoContext(CommonContext):
         # Check rows for bingo
         for row in rows:
             if all(f"{row}{col}" in acquired_set for col in columns):
-                achieved_bingos.append(f"Bingo ({row}1-{row}5)")
+                achieved_bingos.append(f"Bingo ({row}1-{row}{self.board_size})")
 
-        # Check columns for bingo
+            # Check columns for bingo
         for col in columns:
             if all(f"{row}{col}" in acquired_set for row in rows):
-                achieved_bingos.append(f"Bingo (A{col}-E{col})")
+                achieved_bingos.append(f"Bingo (A{col}-{rows[-1]}{col})")
 
-        # Check diagonals for bingo
-        if all(f"{rows[i]}{columns[i]}" in acquired_set for i in range(5)):
-            achieved_bingos.append("Bingo (A1-E5)")
-        if all(f"{rows[i]}{columns[4 - i]}" in acquired_set for i in range(5)):
-            achieved_bingos.append("Bingo (E1-A5)")
+            # Check diagonals for bingo
+        if all(f"{rows[i]}{columns[i]}" in acquired_set for i in range(self.board_size)):
+            achieved_bingos.append(f"Bingo (A1-{rows[-1]}{self.board_size})")
+        if all(f"{rows[i]}{columns[self.board_size - 1 - i]}" in acquired_set for i in range(self.board_size)):
+            achieved_bingos.append(f"Bingo ({rows[-1]}1-A{self.board_size})")
 
-        # If goal no# of bingo's achieved, victory!
-        if len(achieved_bingos) == 12:
+        # Calculate the maximum number of possible bingos for the current board size
+        if len(achieved_bingos) == 2 * self.board_size + 2:
             self.found_checks.append(self.location_name_to_ap_id["Bingo (ALL)"])
 
+        # If goal no# of bingo's achieved, victory!
         if len(achieved_bingos) >= int(self.required_bingo):
             asyncio.create_task(self.end_goal())
 
