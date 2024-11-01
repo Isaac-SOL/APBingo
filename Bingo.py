@@ -22,7 +22,7 @@ def create_bingo_board():
     window = tk.Tk()
     window.title("Bingo Board")
     window.geometry(f"{window_size}x{window_size}")  # Set the window size
-    window.configure(bg="#4B0082")  # Set the window background color to orange
+    window.configure(bg="White")  # Set the window background color to orange
 
     # Create a frame for the Bingo board
     frame = tk.Frame(window, bg="White")  # Set frame background to match window
