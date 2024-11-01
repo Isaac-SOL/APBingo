@@ -167,6 +167,9 @@ class BingoContext(CommonContext):
         for bingo in achieved_bingos:
             bingo_locs.append(f"{bingo}-0")
             bingo_locs.append(f"{bingo}-1")
+            bingo_locs.append(f"{bingo}-2")
+            bingo_locs.append(f"{bingo}-3")
+            bingo_locs.append(f"{bingo}-4")
 
         for location in bingo_locs:
             if location in self.location_name_to_ap_id:

@@ -7,8 +7,7 @@ def get_bingo_rule(location, world) -> Callable[[CollectionState], bool]:
     return lambda state: all(state.has(key, world.player) for key in required_keys)
 
 
-def special_rule(world) -> Callable[[CollectionState], bool]:
-    all_keys = [f"{chr(row)}{col}" for row in range(ord('A'), ord('E') + 1) for col in range(1, 6)]
+def special_rule(world, all_keys) -> Callable[[CollectionState], bool]:
     return lambda state: all(state.has(key, world.player) for key in all_keys)
 
 

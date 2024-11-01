@@ -72,13 +72,13 @@ class BingoWorld(World):
 
         bingo_names = self.get_available_locations(False)
 
-        all_keys = [f"{chr(row)}{col}" for row in range(ord('A'), ord('A') + self.board_size) for col in range(1, self.board_size + 1)]
+        all_keys = self.get_available_items()
 
         for bingo in bingo_names:
             self.get_location(bingo).access_rule = get_bingo_rule(bingo, self)
             self.get_location(bingo).item_rule = lambda item: item.name not in all_keys
 
-        self.get_location("Bingo (ALL)").access_rule = special_rule(self)
+        self.get_location("Bingo (ALL)").access_rule = special_rule(self, all_keys)
         self.get_location("Bingo (ALL)").item_rule = lambda item: item.name not in all_keys
 
         # Don't allow incorrect values for required bingos
@@ -100,22 +100,30 @@ class BingoWorld(World):
 
         bingo_names = []
 
-        # Generate horizontal Bingo names (rows)
-        for row in range(ord('A'), ord('A') + self.board_size):
-            bingo_names.append(f"Bingo ({chr(row)}1-{chr(row)}{self.board_size})-0")
-            bingo_names.append(f"Bingo ({chr(row)}1-{chr(row)}{self.board_size})-1")
+        # Required locations should match the board size
+        required_locations = (self.board_size * self.board_size) - 1
 
-        # Generate vertical Bingo names (columns)
-        for col in range(1, self.board_size + 1):
-            bingo_names.append(f"Bingo (A{col}-{chr(ord('A') + self.board_size - 1)}{col})-0")
-            bingo_names.append(f"Bingo (A{col}-{chr(ord('A') + self.board_size - 1)}{col})-1")
+        suffix = 0  # Start with suffix 0
+        while len(bingo_names) < required_locations:
+            # Generate horizontal Bingo names for the current suffix
+            for row in range(ord('A'), ord('A') + self.board_size):
+                if len(bingo_names) < required_locations:  # Check before appending
+                    bingo_names.append(f"Bingo ({chr(row)}1-{chr(row)}{self.board_size})-{suffix}")
 
-        # Generate diagonal Bingo names
-        bingo_names.append(f"Bingo (A1-{chr(ord('A') + self.board_size - 1)}{self.board_size})-0")
-        bingo_names.append(f"Bingo (A1-{chr(ord('A') + self.board_size - 1)}{self.board_size})-1")
-        bingo_names.append(f"Bingo ({chr(ord('A') + self.board_size - 1)}1-A{self.board_size})-0")
-        bingo_names.append(f"Bingo ({chr(ord('A') + self.board_size - 1)}1-A{self.board_size})-1")
+            # Generate vertical Bingo names for the current suffix
+            for col in range(1, self.board_size + 1):
+                if len(bingo_names) < required_locations:  # Check before appending
+                    bingo_names.append(f"Bingo (A{col}-{chr(ord('A') + self.board_size - 1)}{col})-{suffix}")
 
+            # Generate diagonal Bingo names for the current suffix
+            if len(bingo_names) < required_locations:  # Check before appending
+                bingo_names.append(f"Bingo (A1-{chr(ord('A') + self.board_size - 1)}{self.board_size})-{suffix}")
+            if len(bingo_names) < required_locations:  # Check before appending
+                bingo_names.append(f"Bingo ({chr(ord('A') + self.board_size - 1)}1-A{self.board_size})-{suffix}")
+
+            suffix += 1  # Increment suffix for the next round
+
+        # Include the ALL bingo if specified and we haven't filled the required locations
         if include_all:
             bingo_names.append("Bingo (ALL)")
 

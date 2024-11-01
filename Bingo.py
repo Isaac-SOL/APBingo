@@ -22,9 +22,10 @@ def create_bingo_board():
     window = tk.Tk()
     window.title("Bingo Board")
     window.geometry(f"{window_size}x{window_size}")  # Set the window size
+    window.configure(bg="#4B0082")  # Set the window background color to orange
 
     # Create a frame for the Bingo board
-    frame = tk.Frame(window)
+    frame = tk.Frame(window, bg="White")  # Set frame background to match window
     frame.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)  # Expand frame to fill the window
 
     # Configure grid weights for dynamic resizing
@@ -37,8 +38,8 @@ def create_bingo_board():
             for j in range(board_size):
                 square_name = f"{chr(65 + i)}{j + 1}"  # Create names like "A1", "A2", etc.
                 label = tk.Label(frame, text=square_name, width=10, height=5, font=("Helvetica", 8),
-                                 borderwidth=4, relief="groove", bg="white", wraplength=box_size - 40,
-                                 justify='center')
+                                 borderwidth=4, relief="groove", bg="White", wraplength=box_size - 40,
+                                 justify='center')  # Set label background to orange
                 label.grid(row=i, column=j, padx=10, pady=10, sticky='nsew')  # Adjust sticky for resizing
                 board_squares[square_name] = label  # Store each label in the dictionary
 
