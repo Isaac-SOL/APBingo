@@ -13,7 +13,7 @@ def special_rule(world, all_keys) -> Callable[[CollectionState], bool]:
 
 def can_goal(state, player, required_bingos, board_size) -> bool:
 
-    # Generate all possible Bingo keys for a 10x10 board (A1 to J10)
+    # Generate all possible Bingo keys for the board
     possible_keys = [f"{chr(row)}{col}" for row in range(ord('A'), ord('A') + board_size) for col in range(1, board_size + 1)]
 
     possible_bingos = []
@@ -64,7 +64,7 @@ def extract_bingo_spaces(location):
     start_row = start[0]  # 'A', 'B', 'C', etc.
     start_col = int(start[1])  # 1, 2, 3, etc.
     end_row = end[0]  # 'A', 'B', 'C', etc.
-    end_col = int(end[1])  # 1, 2, 3, etc.
+    end_col = int(end[1:])  # 1, 2, 3, etc.
 
     spaces = []
 
