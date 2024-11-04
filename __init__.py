@@ -46,6 +46,7 @@ class BingoWorld(World):
         for name, item in item_data_table.items():
             if name in squares:
                 item_pool.append(self.create_item(name))
+        self.options.non_local_items.value = set(squares)
         self.multiworld.itempool += item_pool
 
     def create_regions(self) -> None:
@@ -148,4 +149,8 @@ class BingoWorld(World):
             "requiredBingoCount": self.required_bingos,
             "boardLocations": self.board_locations,
             "boardSize": self.options.board_size.value,
+            "customBoard": str(self.options.board_color.value),
+            "customSquare": str(self.options.square_color.value),
+            "customHLSquare": str(self.options.hl_square_color.value),
+            "customText": str(self.options.text_color.value),
         }

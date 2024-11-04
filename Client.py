@@ -75,7 +75,7 @@ class BingoContext(CommonContext):
             self.board_locations = self.options["boardLocations"]
             self.board_size = self.options["boardSize"]
             asyncio.create_task(self.send_msgs([{"cmd": "GetDataPackage", "games": ["APBingo"]}]))
-            run_bingo_board(self.board_size)
+            run_bingo_board(self.board_size, self.options["customBoard"], self.options["customSquare"], self.options["customHLSquare"], self.options["customText"])
             time.sleep(3)  # Give the board time to gen
             update_bingo_board(self.board_locations)
 
