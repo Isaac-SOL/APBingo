@@ -2,6 +2,8 @@ from typing import Optional
 import asyncio
 import colorama
 import time
+import tkinter
+import re
 
 from .Bingo import (
     run_bingo_board,
@@ -75,7 +77,15 @@ class BingoContext(CommonContext):
             self.board_locations = self.options["boardLocations"]
             self.board_size = self.options["boardSize"]
             asyncio.create_task(self.send_msgs([{"cmd": "GetDataPackage", "games": ["APBingo"]}]))
-            run_bingo_board(self.board_size, self.options["customBoard"], self.options["customSquare"], self.options["customHLSquare"], self.options["customText"])
+
+            # Use is_valid_color to determine whether to use the custom or default value
+            board = self.options["customBoard"] if self.is_valid_color(self.options["customBoard"]) else "white"
+            square = self.options["customSquare"] if self.is_valid_color(self.options["customSquare"]) else "white"
+            hl_square = self.options["customHLSquare"] if self.is_valid_color(self.options["customHLSquare"]) else "green"
+            text = self.options["customText"] if self.is_valid_color(self.options["customText"]) else "black"
+
+            # Call run_bingo_board with pre-evaluated arguments
+            run_bingo_board(self.board_size, board, square, hl_square, text)
             time.sleep(3)  # Give the board time to gen
             update_bingo_board(self.board_locations)
 
@@ -126,7 +136,6 @@ class BingoContext(CommonContext):
                     self.acquired_keys.append(item_name)
                     self.bingo_check()
 
-
     def bingo_check(self):
 
         # Generate rows and columns dynamically
@@ -176,6 +185,21 @@ class BingoContext(CommonContext):
                 self.found_checks.append(self.location_name_to_ap_id[location])
 
         asyncio.create_task(self.send_checks())
+
+    def is_valid_color(self, color_string):
+        # Match patterns for hex color codes with 3, 4, 6, or 8 hex digits
+        hex_pattern = r'^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{4}|[A-Fa-f0-9]{6}|[A-Fa-f0-9]{8})$'
+
+        # Check if it's a valid hex code
+        if re.match(hex_pattern, color_string):
+            return True
+
+        # Try to validate with Tkinter's color recognition
+        try:
+            tkinter.Tk().winfo_rgb(color_string)
+            return True
+        except tkinter.TclError:
+            return False
 
     async def end_goal(self):
         message = [{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}]
