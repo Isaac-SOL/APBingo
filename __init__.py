@@ -91,6 +91,43 @@ class BingoWorld(World):
         # Completion condition.
         self.multiworld.completion_condition[self.player] = lambda state: can_goal(state, self.player, self.required_bingos, self.board_size)
 
+    def pre_fill(self) -> None:
+        if self.options.bingo_balance == 0:
+            return
+
+        num_items:int = len(self.get_available_items())*100//self.options.bingo_balance
+        items_to_distribute = self.get_available_items()
+        self.random.shuffle(items_to_distribute)
+        items_to_distribute = items_to_distribute[:num_items]
+        players = [i for i in self.multiworld.player_ids if self.multiworld.game[i] != self.game]
+
+        player_locations = [self.multiworld.get_unfilled_locations(p) for p in players]
+        for locations in player_locations:
+            self.random.shuffle(locations)
+
+        while len(items_to_distribute) > 0:
+            #Round robin placement
+            for candidates in player_locations:
+                item = self.create_item(items_to_distribute[-1])
+                for location in reversed(candidates):
+                    if location.address is not None and location.item is None and location.can_fill(self.multiworld.state,item,check_access=False):
+                        self.multiworld.push_item(location,item,False)
+                        location.locked = True
+                        candidates.remove(location)
+                        self.multiworld.itempool.remove(item)
+                        items_to_distribute.pop()
+                        break
+                else:
+                    #Couldn't place at a single location, this game can't accept any more items from us
+                    candidates.clear()
+                if len(items_to_distribute) == 0:
+                    # Placed all items, break out
+                    break
+            player_locations = list(filter(lambda l: len(l) > 0,player_locations))
+            if len(player_locations) == 0:
+                # No more locations left, need to abort the loop
+                break
+
     def get_available_items(self):
         return [f"{chr(row)}{col}" for row in range(ord('A'), ord('A') + self.options.board_size.value) for col in range(1, self.options.board_size.value + 1)]
 
