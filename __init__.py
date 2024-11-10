@@ -95,7 +95,7 @@ class BingoWorld(World):
         if self.options.bingo_balance == 0:
             return
 
-        num_items:int = len(self.get_available_items())*100//self.options.bingo_balance
+        num_items:int = len(self.get_available_items())*self.options.bingo_balance//100
         items_to_distribute = self.get_available_items()
         self.random.shuffle(items_to_distribute)
         items_to_distribute = items_to_distribute[:num_items]
