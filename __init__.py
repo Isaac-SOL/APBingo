@@ -73,14 +73,13 @@ class BingoWorld(World):
 
         bingo_names = self.get_available_locations(False)
 
-        all_keys = self.get_available_items()
-
         for bingo in bingo_names:
             self.get_location(bingo).access_rule = get_bingo_rule(bingo, self)
-            self.get_location(bingo).item_rule = lambda item: item.name not in all_keys
+            self.get_location(bingo).item_rule = lambda item: item.game != "APBingo"
 
+        all_keys = self.get_available_items()
         self.get_location("Bingo (ALL)").access_rule = special_rule(self, all_keys)
-        self.get_location("Bingo (ALL)").item_rule = lambda item: item.name not in all_keys
+        self.get_location("Bingo (ALL)").item_rule = lambda item: item.game != "APBingo"
 
         # Don't allow incorrect values for required bingos
         self.required_bingos = self.options.required_bingos.value
