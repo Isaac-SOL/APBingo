@@ -201,7 +201,7 @@ class BingoWorld(World):
             "boardLocations": self.board_locations,
             "boardItems": self.board_items,
             "boardSize": self.options.board_size.value,
-            "autoHintItems": self.options.auto_hint_items,
+            "autoHintItems": self.options.auto_hint_items.value,
             "customBoard": str(self.options.board_color.value),
             "customSquare": str(self.options.square_color.value),
             "customHLSquare": str(self.options.hl_square_color.value),
