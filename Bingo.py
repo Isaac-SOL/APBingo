@@ -23,11 +23,11 @@ def get_square_name(row, col):
 
 
 def get_row_item_name(row):
-    return f"{chr(row)}1-{chr(row)}{board_size}"
+    return f"{chr(ord('A') + row)}1-{chr(ord('A') + row)}{board_size}"
 
 
 def get_col_item_name(col):
-    return f"A{col}-{chr(ord('A') + board_size - 1)}{col}"
+    return f"A{col + 1}-{chr(ord('A') + board_size - 1)}{col + 1}"
 
 
 def get_diag_item_name(major):
@@ -94,13 +94,13 @@ def create_bingo_board():
     # If item rewards are shown, add placeholder labels for the items
     if show_items:
         # Rows
-        for row in range(ord('A'), ord('A') + board_size):
+        for row in range(board_size):
             item_name = get_row_item_name(row)
-            create_item_label(frame, item_name, row - 1, 5)
+            create_item_label(frame, item_name, row + 1, 5)
         # Columns
-        for col in range(1, board_size + 1):
+        for col in range(board_size):
             item_name = get_col_item_name(col)
-            create_item_label(frame, item_name, 6, col - 1)
+            create_item_label(frame, item_name, 6, col)
         # Diagonals
         item_name = get_diag_item_name(True)
         create_item_label(frame, item_name, 6, 5)
@@ -153,23 +153,23 @@ def update_bingo_board_items(item_labels):
     # item_labels is in rows/cols/diags/all format
     # Rows
     for i in range(0, board_size * 2, 2):
-        label_text = item_labels[i] + "\n" + item_labels[i + 1]
+        label_text = item_labels[i] + "\n\n" + item_labels[i + 1]
         row = i // 2
         item_name = get_row_item_name(row)
         board_items[item_name].config(text=label_text)
     # Columns
     for i in range(board_size * 2, board_size * 4, 2):
-        label_text = item_labels[i] + "\n" + item_labels[i + 1]
-        col = (board_size * 2) - (i // 2)
+        label_text = item_labels[i] + "\n\n" + item_labels[i + 1]
+        col = (i - (board_size * 2)) // 2
         item_name = get_col_item_name(col)
         board_items[item_name].config(text=label_text)
     # Diagonals
     for diag_type, i in enumerate([board_size * 4, board_size * 4 + 2]):
-        label_text = item_labels[i] + "\n" + item_labels[i + 1]
+        label_text = item_labels[i] + "\n\n" + item_labels[i + 1]
         item_name = get_diag_item_name(diag_type == 0)
         board_items[item_name].config(text=label_text)
     # All
-    label_text = item_labels[board_size * 4 + 4]
+    label_text = "ALL:\n" + item_labels[board_size * 4 + 4]
     board_items["ALL"].config(text=label_text)
 
 
