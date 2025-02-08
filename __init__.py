@@ -5,7 +5,7 @@ from worlds.AutoWorld import World
 from worlds.LauncherComponents import Component, components, Type, launch_subprocess
 from .Items import BingoItem, item_data_table, item_table
 from .Locations import BingoLocation, location_data_table, location_table
-from .Options import BingoOptions, BingoStartHints
+from .Options import BingoOptions, BingoStartHints, BingoStartLocationHints
 from .Regions import region_data_table
 from .Rules import get_bingo_rule, special_rule, can_goal
 
@@ -32,6 +32,7 @@ class BingoWorld(World):
     location_name_to_id = location_table
     item_name_to_id = item_table
     board_locations = []
+    board_items = []
     board_size = 0
     required_bingos = 22
 
@@ -175,16 +176,32 @@ class BingoWorld(World):
             board_location = self.multiworld.find_item(square, self.player)
             self.board_locations.append(str(board_location))
 
+    def find_items(self):
+
+        self.board_items = []
+        row_col_diag_all = self.get_available_locations(True)
+
+        for location in row_col_diag_all:
+            board_item = self.multiworld.get_location(location, self.player).item
+            self.board_items.append(str(board_item))
+
+
     def fill_slot_data(self) -> Dict[str, Any]:
 
         self.find_locations()
         if bool(self.options.auto_hints):
             self.options.start_hints = BingoStartHints(self.get_available_items())
 
+        self.find_items()
+        if bool(self.options.auto_hint_items):
+            self.options.start_location_hints = BingoStartLocationHints(self.get_available_locations(True))
+
         return {
             "requiredBingoCount": self.required_bingos,
             "boardLocations": self.board_locations,
+            "boardItems": self.board_items,
             "boardSize": self.options.board_size.value,
+            "autoHintItems": self.options.auto_hint_items,
             "customBoard": str(self.options.board_color.value),
             "customSquare": str(self.options.square_color.value),
             "customHLSquare": str(self.options.hl_square_color.value),

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from Options import Toggle, Option, Range, Choice, ItemSet, OptionSet, PerGameCommonOptions, StartHints, TextChoice
+from Options import Toggle, Option, Range, Choice, ItemSet, OptionSet, PerGameCommonOptions, StartHints, TextChoice, StartLocationHints
 
 class RequiredBingos(Range):
     """The number of Bingo's required to goal, min is 1, max is 22
@@ -29,6 +29,11 @@ class AutoHints(Toggle):
     display_name = "Auto Hints"
 
 
+class AutoHintItems(Toggle):
+    """If true, automatically hint all item rewards for getting a bingo or completing the board"""
+    display_name = "Auto Hint Items"
+
+
 class CustomBoardColor(TextChoice):
     """Choose the background Color (Use colors or Hex)"""
     display_name = "Background Color"
@@ -56,14 +61,20 @@ class BingoStartHints(StartHints):
     """Start with these item's locations prefilled into the ``!hint`` command."""
     default = []
 
+class BingoStartLocationHints(StartLocationHints):
+    """ Start with these locations and their item prefilled into the ``!hint`` command. """
+    default = []
+
 @dataclass
 class BingoOptions(PerGameCommonOptions):
     required_bingos: RequiredBingos
     board_size: BoardSize
     bingo_balance: BingoBalancing
     auto_hints: AutoHints
+    auto_hint_items: AutoHintItems
     board_color: CustomBoardColor
     square_color: CustomSquareColor
     hl_square_color: CustomHLSquareColor
     text_color: CustomTextColor
     start_hints: BingoStartHints
+    start_location_hints: BingoStartLocationHints

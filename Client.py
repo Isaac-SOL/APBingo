@@ -9,6 +9,7 @@ from .Bingo import (
     run_bingo_board,
     highlight_square,
     update_bingo_board,
+    update_bingo_board_items,
 )
 
 
@@ -41,6 +42,7 @@ class BingoContext(CommonContext):
         self.game = "APBingo"
         self.previous_received = []
         self.board_locations = []
+        self.board_items = []
         self.items_handling = 0b001 | 0b010 | 0b100  #Receive items from other worlds, starting inv, and own items
         self.location_ids = None
         self.location_name_to_ap_id = None
@@ -75,6 +77,7 @@ class BingoContext(CommonContext):
             self.options = args["slot_data"]
             self.required_bingo = self.options["requiredBingoCount"]
             self.board_locations = self.options["boardLocations"]
+            self.board_items = self.options["boardItems"]
             self.board_size = self.options["boardSize"]
             asyncio.create_task(self.send_msgs([{"cmd": "GetDataPackage", "games": ["APBingo"]}]))
 
@@ -85,9 +88,12 @@ class BingoContext(CommonContext):
             text = self.options["customText"] if self.is_valid_color(self.options["customText"]) else "black"
 
             # Call run_bingo_board with pre-evaluated arguments
-            run_bingo_board(self.board_size, board, square, hl_square, text)
+            run_bingo_board(self.board_size, board, square, hl_square, text,
+                            auto_hint_items=self.options["autoHintItems"])
             time.sleep(3)  # Give the board time to gen
             update_bingo_board(self.board_locations)
+            if self.options["autoHintItems"]:
+                update_bingo_board_items(self.board_items)
 
             # if we don't have the seed name from the RoomInfo packet, wait until we do.
             while not self.seed_name:
