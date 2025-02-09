@@ -7,7 +7,7 @@ board_items = {}
 window = None  # This will hold the Tkinter window instance
 bingo_thread = None  # This will hold the Bingo board thread instance
 box_size = 150  # Set box size to be consistent and large
-window_size = 800  # Increase window size to fit the board
+window_size = (1200, 800)  # Increase window size to fit the board
 board_size = 0
 show_items = False
 
@@ -36,13 +36,14 @@ def get_diag_item_name(major):
     return f"{chr(ord('A') + board_size - 1)}1-A{board_size}"
 
 
-def create_item_label(frame, item_name, row, col):
+def create_item_label(frame, item_name, row, col, width=1):
     label = tk.Label(
         frame, text=item_name, width=10, height=5,
         font=("Helvetica", 8), fg=text_color,
-        wraplength=box_size - 40, justify='center'
+        wraplength=box_size + (100 * (width - 1)),
+        justify='center', relief='sunken', borderwidth=1
     )
-    label.grid(row=row, column=col, padx=10, pady=10, sticky='nsew')  # Adjust sticky for resizing
+    label.grid(row=row, column=col, padx=17, pady=17, sticky='nsew', columnspan=width)  # Adjust sticky for resizing
     board_items[item_name] = label
     return label
 
@@ -64,7 +65,7 @@ def create_bingo_board():
     # Create a new window
     window = tk.Tk()
     window.title("Bingo Board")
-    window.geometry(f"{window_size}x{window_size}")  # Set the window size
+    window.geometry(f"{window_size[0]}x{window_size[1]}")  # Set the window size
     window.configure(bg=bg_color)  # Set the window background color to the specified color
 
     # Create a frame for the Bingo board
@@ -96,19 +97,19 @@ def create_bingo_board():
         # Rows
         for row in range(board_size):
             item_name = get_row_item_name(row)
-            create_item_label(frame, item_name, row + 1, 5)
+            create_item_label(frame, item_name, row + 1, board_size)
         # Columns
         for col in range(board_size):
             item_name = get_col_item_name(col)
-            create_item_label(frame, item_name, 6, col)
+            create_item_label(frame, item_name, board_size + 1, col)
         # Diagonals
         item_name = get_diag_item_name(True)
-        create_item_label(frame, item_name, 6, 5)
+        create_item_label(frame, item_name, board_size + 1, board_size)
         item_name = get_diag_item_name(False)
-        create_item_label(frame, item_name, 0, 5)
+        create_item_label(frame, item_name, 0, board_size)
         # All
         item_name = "ALL"
-        create_item_label(frame, item_name, 0, 0)
+        create_item_label(frame, item_name, 0, 0, board_size)
 
     # Start the Tkinter main loop
     window.protocol("WM_DELETE_WINDOW", on_closing)  # Handle window close event
